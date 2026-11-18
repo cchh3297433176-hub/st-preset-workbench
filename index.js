@@ -1,4 +1,4 @@
-import { openEntrySnapshots } from './entry-snapshots.js';
+import { mountEntrySnapshots } from './entry-snapshots.js';
 
 function mountWorkbench() {
     const menu = document.querySelector('#options .options-content');
@@ -16,22 +16,16 @@ function mountWorkbench() {
     const label = document.createElement('span');
     label.textContent = '预设工作台';
     link.append(icon, label);
-    const snapshots = document.createElement('a');
-    snapshots.href = '#';
-    const snapshotIcon = icon.cloneNode();
-    snapshotIcon.className = 'fa-lg fa-solid fa-bookmark';
-    const snapshotLabel = document.createElement('span');
-    snapshotLabel.textContent = '条目快照';
-    snapshots.append(snapshotIcon, snapshotLabel);
-    snapshots.addEventListener('click', event => {
-        event.preventDefault();
-        openEntrySnapshots();
-    });
-    menu.append(link, snapshots);
+    menu.append(link);
+}
+
+function mountExtension() {
+    mountWorkbench();
+    mountEntrySnapshots();
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mountWorkbench, { once: true });
+    document.addEventListener('DOMContentLoaded', mountExtension, { once: true });
 } else {
-    mountWorkbench();
+    mountExtension();
 }

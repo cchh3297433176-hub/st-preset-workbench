@@ -37,41 +37,32 @@ function makeButton(label, click) {
     return button;
 }
 
-export function openEntrySnapshots() {
-    if (document.getElementById('preset-workbench-snapshots-dialog')) return;
-
-    const panel = document.createElement('dialog');
-    panel.id = 'preset-workbench-snapshots-dialog';
-    panel.setAttribute('aria-labelledby', 'preset-workbench-snapshots-title');
+function buildSnapshotPanel() {
+    const panel = document.createElement('details');
+    panel.id = 'preset-workbench-snapshots';
     panel.innerHTML = `
-        <header>
-            <h3 id="preset-workbench-snapshots-title">条目快照</h3>
-        </header>
-        <p class="snapshot-preset"></p>
-        <form class="snapshot-form">
-            <input type="text" class="text_pole" aria-label="快照名称" placeholder="例如：角色甲" maxlength="60" required>
-            <button class="menu_button" type="submit">保存当前开关</button>
-        </form>
-        <p class="snapshot-feedback" role="status"></p>
-        <div class="snapshot-list"></div>
+        <summary>预设快照</summary>
+        <div class="snapshot-body">
+            <p class="snapshot-preset"></p>
+            <form class="snapshot-form">
+                <input type="text" class="text_pole" aria-label="快照名称" placeholder="例如：角色甲" maxlength="60" required>
+                <button class="menu_button" type="submit">保存当前开关</button>
+            </form>
+            <p class="snapshot-feedback" role="status"></p>
+            <div class="snapshot-list"></div>
+        </div>
     `;
-    const header = panel.querySelector('header');
     const summary = panel.querySelector('.snapshot-preset');
     const form = panel.querySelector('.snapshot-form');
     const input = form.querySelector('input');
     const feedback = panel.querySelector('.snapshot-feedback');
     const list = panel.querySelector('.snapshot-list');
-    header.append(makeButton('关闭', () => panel.close()));
-    const closeOptions = document.getElementById('options');
-    if (closeOptions) closeOptions.style.display = 'none';
-    document.body.append(panel);
-    panel.addEventListener('close', () => panel.remove(), { once: true });
 
     let openedPreset;
     function current() {
         const live = activePreset();
         if (openedPreset && live.name !== openedPreset) {
-            throw new Error('酒馆已切换预设，请重新打开条目快照');
+            throw new Error('酒馆已切换预设，请收起后重新展开预设快照');
         }
         return live;
     }
@@ -81,6 +72,7 @@ export function openEntrySnapshots() {
     function draw() {
         const { context, name, entries } = current();
         openedPreset = name;
+        form.hidden = false;
         summary.textContent = name + ' · 当前开启 ' + entries.filter(entry => entry.enabled).length + ' 项';
         list.replaceChildren();
         const records = savedSnapshots(context).filter(record => record?.preset === name);
@@ -91,9 +83,7 @@ export function openEntrySnapshots() {
             const active = matches.length > 0 && matches.every(entry => Boolean(entry.enabled) === saved.get(entry.identifier));
             const row = document.createElement('div');
             row.className = 'snapshot-row';
-            const description = document.createElement('span');
-            description.textContent = record.name + (active ? ' · 当前' : '');
-            const apply = makeButton('应用', () => {
+            const apply = makeButton(record.name + (active ? ' · 当前' : ''), () => {
                 try {
                     const { context, entries } = current();
                     const matches = entries.filter(entry => saved.has(entry.identifier));
@@ -106,13 +96,15 @@ export function openEntrySnapshots() {
                         counts[entry.identifier] = null;
                     }
                     context.saveSettingsDebounced();
-                    promptManager.render();
-                    panel.close();
-                    window.toastr?.success('已应用条目快照：' + record.name);
+                    promptManager.render(false);
+                    draw();
+                    feedback.textContent = '已切换到「' + record.name + '」。';
                 } catch (error) {
                     reportError(error);
                 }
             });
+            apply.classList.add('snapshot-apply');
+            apply.setAttribute('aria-pressed', String(active));
             apply.setAttribute('aria-label', '应用 ' + record.name);
             const remove = makeButton('删除', () => {
                 if (!window.confirm('删除快照「' + record.name + '」？')) return;
@@ -126,7 +118,7 @@ export function openEntrySnapshots() {
                 }
             });
             remove.setAttribute('aria-label', '删除 ' + record.name);
-            row.append(description, apply, remove);
+            row.append(apply, remove);
             list.append(row);
         }
     }
@@ -151,11 +143,65 @@ export function openEntrySnapshots() {
             reportError(error);
         }
     });
-    try {
-        draw();
-    } catch (error) {
-        form.hidden = true;
-        reportError(error);
+    function refresh() {
+        if (!panel.open) return;
+        feedback.textContent = '';
+        const previous = openedPreset;
+        openedPreset = undefined;
+        try {
+            draw();
+            if (previous !== openedPreset) input.value = '';
+        } catch (error) {
+            form.hidden = true;
+            summary.textContent = '';
+            list.replaceChildren();
+            reportError(error);
+        }
     }
-    panel.showModal();
+    panel.addEventListener('toggle', refresh);
+    return { panel, refresh };
+}
+
+function presetSettingsAnchor(root) {
+    const headers = root.querySelectorAll('summary, .inline-drawer-header, .inline-drawer-toggle, [aria-expanded]');
+    for (const header of headers) {
+        const label = header.textContent.replace(/\s/g, '');
+        if (!/^(?:预设设置|預設設定|PresetSettings)$/i.test(label)) continue;
+        const drawer = header.closest('details, .inline-drawer');
+        if (drawer) return drawer;
+        const controls = header.getAttribute('aria-controls');
+        const content = controls && document.getElementById(controls);
+        if (content?.parentElement === header.parentElement) return content;
+        if (header.parentElement && header.parentElement !== root && root.contains(header.parentElement)) return header.parentElement;
+    }
+    return root.querySelector('#openai_api-presets');
+}
+
+export function mountEntrySnapshots() {
+    const root = document.getElementById('ai-config-button');
+    if (!root || document.getElementById('preset-workbench-snapshots')) return;
+    const { panel, refresh } = buildSnapshotPanel();
+    function place() {
+        const anchor = presetSettingsAnchor(root);
+        if (anchor && anchor.nextElementSibling !== panel) anchor.after(panel);
+        const api = window.SillyTavern?.getContext?.()?.mainApi;
+        panel.hidden = Boolean(api && api !== 'openai');
+    }
+    place();
+    new MutationObserver(place).observe(root, { childList: true, subtree: true });
+    const context = window.SillyTavern?.getContext?.();
+    if (context?.eventTypes?.OAI_PRESET_CHANGED_AFTER) {
+        context.eventSource.on(context.eventTypes.OAI_PRESET_CHANGED_AFTER, refresh);
+    }
+    root.addEventListener('change', event => {
+        if (event.target.id === 'settings_preset_openai' || event.target.id === 'main_api') {
+            requestAnimationFrame(() => {
+                place();
+                refresh();
+            });
+        }
+    });
+    root.addEventListener('click', event => {
+        if (event.target.closest('[data-pm-identifier]')) queueMicrotask(refresh);
+    });
 }
