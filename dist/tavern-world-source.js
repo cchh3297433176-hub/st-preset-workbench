@@ -19,6 +19,57 @@ function tavernPresetManager(){
  }
  return null;
 }
+function selectedTavernPreset(){
+ const manager=tavernPresetManager(),name=manager?.getSelectedPresetName?.();
+ if(!name)return null;
+ const raw=manager.getCompletionPresetByName(name);
+ return raw?{name,raw}:null;
+}
+function hasDraftToKeep(){
+ if(dirty()||state.plans.length||state.messages.length||state.tavernDraftTouched)return true;
+ if(importedDoc)return !state.tavernSource;
+ return Boolean(state.targetName)||JSON.stringify(state.entries)!==JSON.stringify(seeds);
+}
+function offerCurrentTavernPreset(current){
+ const {name,raw}=current;
+ PresetDocument.load(raw);
+ modal('打开酒馆当前预设',`<p>${esc(name)}</p><p class="muted">切换后可在工作台撤销，恢复原草稿。</p>`,
+  '<button class="btn" data-action="close-modal">保留草稿</button><button class="btn primary" id="confirm-current-tavern-preset">载入草稿</button>');
+ document.getElementById('confirm-current-tavern-preset').addEventListener('click',()=>{
+  try{adoptImport(raw,name,undefined,name)}catch(error){toast('无法载入预设：'+error.message)}
+ });
+}
+function syncCurrentTavernPreset(allowSwitch){
+ if(route!=='work'||entryId||document.getElementById('chat-input')?.disabled||document.getElementById('modal').open||document.getElementById('chat-input')?.value.trim())return;
+ try{
+  const current=selectedTavernPreset();
+  if(!current)return;
+  const matches=Boolean(importedDoc)&&state.targetName===current.name.replace(/\.json$/i,'')&&
+   (!allowSwitch||JSON.stringify(importedDoc.raw)===JSON.stringify(current.raw));
+  if(matches){
+   if(allowSwitch)document.getElementById('open-current-tavern-preset')?.remove();
+   return;
+  }
+  if(allowSwitch&&!hasDraftToKeep()){adoptImport(current.raw,current.name,undefined,current.name);return}
+  if(!hasDraftToKeep())return;
+  const picker=document.querySelector('[data-action="read-tavern-preset"]');
+  if(picker&&!document.getElementById('open-current-tavern-preset')){
+   const button=document.createElement('button');
+   button.id='open-current-tavern-preset';
+   button.className='btn small soft';
+   button.type='button';
+   button.textContent='打开酒馆当前预设';
+   button.addEventListener('click',()=>{
+    try{
+     const latest=selectedTavernPreset();
+     if(latest)offerCurrentTavernPreset(latest);
+     else toast('酒馆当前预设暂不可读取');
+    }catch(error){toast('无法读取当前预设：'+error.message)}
+   });
+   picker.after(button);
+  }
+ }catch{toast('当前预设暂不可读取，可从酒馆预设列表手动选择')}
+}
 function drawTavernPresets(){
  const manager=tavernPresetManager();
  if(!manager){toast('请从酒馆左下角菜单重新打开工作台');return}
@@ -88,9 +139,15 @@ document.addEventListener('click',event=>{
  if(!event.target.closest('[data-action="read-tavern-world"]'))return;
  try{drawTavernBooks()}catch(error){toast('无法读取世界书列表：'+error.message)}
 });
+window.addEventListener('hashchange',()=>syncCurrentTavernPreset(true));
 window.addEventListener('focus',()=>{
  if(!entryId&&route==='work'&&!document.getElementById('modal').open){
+  if(document.getElementById('chat-input')?.disabled||document.getElementById('chat-input')?.value.trim())return;
   if(Boolean(document.querySelector('[data-action="read-tavern-world"]'))!==Boolean(tavernWorldHelper())||Boolean(document.querySelector('[data-action="read-tavern-preset"]'))!==Boolean(tavernPresetManager()))render();
+  syncCurrentTavernPreset(true);
  }
 });
+const renderTavernWorkspace=render;
+render=function(){renderTavernWorkspace();syncCurrentTavernPreset(false)};
 render();
+syncCurrentTavernPreset(true);

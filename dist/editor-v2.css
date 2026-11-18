@@ -14,3 +14,6 @@
 .placement-row>details[open]{grid-column:1/-1}
 .world-role{margin:10px 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px}
 .ref-footer,.bulkbar{flex-wrap:wrap}
+
+.workbench-model { margin-bottom: 8px; }
+.workbench-model select { max-width: 100%; width: min(100%, 380px); }

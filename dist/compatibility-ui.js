@@ -6,7 +6,7 @@ function currentDoc(){if(!importedDoc)return null;return {...importedDoc,entries
 function localDownload(raw,name){const blob=new Blob([JSON.stringify(raw,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function groupIdForName(name){return importedDoc?.groups.find(g=>g.name===name)?.id||null}
 function persistImported(){state.importedDocument=importedDoc;save()}
-function adoptImport(raw,name,index){const doc=PresetDocument.load(raw,index);checkpoint();importedDoc=doc;state.entries=clone(doc.entries);state.baseline=clone(doc.entries);state.targetName=name.replace(/\.json$/i,'');state.refs=state.refs.filter(id=>importedReferences.has(id));state.refEntries=state.refEntries.filter(ref=>importedReferences.has(ref.presetId));state.messages=[];state.plans=[];planSelection.clear();pendingEntry=null;entryId=null;bulk=false;selected.clear();persistImported();closeModal();tab='edit';nav('work');toast(`已读取 ${doc.entries.length} 个条目；原文件未修改`)}
+function adoptImport(raw,name,index,tavernSource=null){const doc=PresetDocument.load(raw,index);checkpoint();importedDoc=doc;state.tavernSource=tavernSource;state.tavernDraftTouched=false;state.entries=clone(doc.entries);state.baseline=clone(doc.entries);state.targetName=name.replace(/\.json$/i,'');state.refs=state.refs.filter(id=>importedReferences.has(id));state.refEntries=state.refEntries.filter(ref=>importedReferences.has(ref.presetId));state.messages=[];state.plans=[];planSelection.clear();pendingEntry=null;entryId=null;bulk=false;selected.clear();persistImported();closeModal();tab='edit';nav('work');toast(`已读取 ${doc.entries.length} 个条目；原文件未修改`)}
 fileInput.addEventListener('change',async()=>{const file=fileInput.files[0];if(!file)return;try{if(file.size>25*1024*1024)throw Error('当前预览支持 25 MB 以内的预设');const raw=JSON.parse(await file.text());PresetDocument.load(raw);modal('导入到独立草稿',`<p class="muted">${esc(file.name)}</p><p class="muted" style="margin-top:12px">导入后切换编辑目标。当前草稿可用撤销恢复；原文件不会被修改。</p>`,'<button class="btn" data-action="close-modal">取消</button><button class="btn primary" data-action="confirm-import-document">载入草稿</button>');fileInput._pending={raw,name:file.name}}catch(e){toast('无法导入：'+e.message)}fileInput.value=''});
 const referenceInput=fileInput.cloneNode();referenceInput.multiple=true;document.body.append(referenceInput);
 const scriptInput=fileInput.cloneNode();document.body.append(scriptInput);
@@ -64,7 +64,7 @@ scriptInput.addEventListener('change',async()=>{
   const raw=PresetDocument.attachScript(target.raw,asset);
   checkpoint();
   importedDoc={...target,raw};
-  persistImported();assetTab='scripts';assetPanel();toast('脚本已加入草稿');
+  state.tavernDraftTouched=true;persistImported();assetTab='scripts';assetPanel();toast('脚本已加入草稿');
  }catch(error){toast('无法导入脚本：'+error.message)}
 });
 function groupRows(groups){
@@ -101,7 +101,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');
  else if(a==='asset-tab'){assetTab=v;assetPanel()}
  else if(a==='inspect-script'){const s=PresetDocument.scripts(importedDoc.raw)[Number(index)];if(s?.type==='script')modal(s.name,`<p class="muted">代码只读 · 未执行</p><textarea readonly aria-label="脚本源代码" style="width:100%;min-height:320px;font-family:monospace;font-size:12px;margin-top:12px" spellcheck="false">${esc(s.content)}</textarea>`,`<button class="btn" data-action="preset-assets">返回脚本树</button><button class="btn primary" data-action="download-script" data-index="${Number(index)}">导出脚本</button>`)}
  else if(a==='export-imported'){try{const doc=currentDoc();if(!doc)throw Error('请先导入预设');localDownload(PresetDocument.exportPreset(doc,state.entries),(state.targetName||'preset')+'-草稿.json');toast('已导出新文件，原文件未修改')}catch(err){toast('导出失败：'+err.message)}}
- else if(a==='save-version'&&importedDoc){const doc=PresetDocument.load(PresetDocument.exportPreset(currentDoc(),state.entries),importedDoc.groupIndex);importedDoc=doc;state.baseline=clone(state.entries);persistImported();render();toast('已保存本地草稿；导出后再导入酒馆')}
+ else if(a==='save-version'&&importedDoc){const doc=PresetDocument.load(PresetDocument.exportPreset(currentDoc(),state.entries),importedDoc.groupIndex);importedDoc=doc;state.tavernDraftTouched=true;state.baseline=clone(state.entries);persistImported();render();toast('已保存本地草稿；导出后再导入酒馆')}
  else if(a==='undo'){handled=false;queueMicrotask(()=>{importedDoc=state.importedDocument||null;render()})}
  else if(a==='new'&&importedDoc){toast('当前在编辑导入文件；先导出保存，或使用设置重置后体验示例');}
  else handled=false;
