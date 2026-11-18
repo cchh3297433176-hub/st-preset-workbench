@@ -1,20 +1,16 @@
-# 酒馆预设工作台 · Termux 试装
+# 酒馆预设工作台
 
-需要能正常打开的 SillyTavern。读取世界书需要启用酒馆助手。
+## 通过链接安装
 
-1. 下载 ZIP 到 Android 的 Download 目录，确认 Termux 已获得共享存储权限。如果还没有，执行 `termux-setup-storage` 并授权。解压需要 `unzip`（缺少时可用 `pkg install unzip`）。
-2. 在 Termux 中进入自己的 SillyTavern 安装目录。默认单用户目录通常是 `data/default-user`。如用了其他账号，将下方路径改成相应目录。
-3. 同一条命令可用于首次安装或覆盖旧版工作台。
+在酒馆打开「扩展 → 安装扩展」，粘贴下方 GitHub 仓库地址，安装给当前用户。刷新酒馆后，从聊天框左下角「☰ → 预设工作台」进入。后续在扩展管理里更新。
 
-```bash
-cd ~/SillyTavern && test -f package.json && test -d data/default-user &&
-mkdir -p data/default-user/extensions &&
-unzip -tq ~/storage/downloads/preset-workbench-termux-menu.zip &&
-unzip -oq ~/storage/downloads/preset-workbench-termux-menu.zip -d data/default-user/extensions &&
-echo '安装成功'
+```text
+https://github.com/cchh3297433176-hub/st-preset-workbench.git
 ```
 
-刷新酒馆，点聊天输入框左下角的「☰」，选择「预设工作台」。保留原酒馆标签页。工作台里点「从酒馆选世界书」，选一本书后勾条目、选编号并加入草稿。如果要导出为完整预设，先在「预设库」导入你的目标预设 JSON。
+如果以前用 ZIP 安装过，请先按[迁移步骤](docs/troubleshooting.md#从-zip-迁移到链接安装)移开旧扩展目录。
+
+保留原酒馆标签页。读取世界书需要启用酒馆助手。工作台里点「从酒馆选世界书」，选一本书后勾条目、选编号并加入草稿。如果要导出为完整预设，先在「预设库」导入你的目标预设 JSON。
 
 世界书读取和转换在当前酒馆地址完成。读取入口只调用酒馆助手的查询接口，插入只改浏览器草稿。草稿与线上预览分属不同地址，如需迁移已有草稿，可在原预览中导出预设 JSON 后在本地导入。
 
@@ -35,9 +31,5 @@ echo '安装成功'
 在「工作区 → AI 会话」先选择模型，再发送。选择「沿用酒馆当前连接」即可复用酒馆已连接的模型。同一酒馆地址下，ST-ApiManager 已保存的 OpenAI 兼容模型会按分组显示。原生来源请先在 API 管理器中应用配置，再选择「沿用酒馆当前连接」。
 
 发送时会附上当前草稿条目、所选参考和最近会话。模型提出的修改在「修改审阅」逐项确认后加入草稿。脚本附件本身是管理器程序，模型来自浏览器中已保存的分组。
-
-## 从 GitHub 下载
-
-登录有仓库权限的 GitHub 账号，打开 [Termux 安装包](downloads/preset-workbench-termux-menu.zip)，点击 **Download raw file**。保存到手机的「下载」目录后执行上面的安装命令。
 
 开发前先看 [文件目录表](FILE-INDEX.md)。

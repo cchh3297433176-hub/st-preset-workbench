@@ -2,9 +2,9 @@
 
 | 文件 | 用途 | 按需一起查看 |
 | --- | --- | --- |
-| `README.md` | GitHub 下载、Termux 安装、酒馆入口和使用说明 | `manifest.json` |
+| `README.md` | GitHub 链接安装、酒馆入口和使用说明 | `manifest.json` |
 | `FILE-INDEX.md` | 文件用途和按需检出方法 | |
-| [`docs/troubleshooting.md`](docs/troubleshooting.md) | 下载、覆盖安装、真实数据读取与换窗口交接的踩坑记录 | `README.md`、`manifest.json` |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | 链接安装迁移、真实数据读取与换窗口交接的踩坑记录 | `README.md`、`manifest.json` |
 | `manifest.json` | SillyTavern 扩展名称、版本、加载入口 | `index.js` |
 | `index.js` | 挂载酒馆左下角菜单，打开工作台，并挂载预设快照折叠栏 | `manifest.json`、`dist/index.html` |
 | `entry-snapshots.js`、`entry-snapshots.css` | 保存和应用酒馆当前预设的条目开关组合 | `index.js`、`manifest.json` |
@@ -22,11 +22,11 @@
 | `tests/preset-document.test.cjs` | 预设往返、分组、顺序和脚本保存测试 | `dist/preset-document.js` |
 | `docs/01-完整开发需求.md` | 完整需求与验收边界 | |
 | `docs/03-预设缝合与智能编辑专题.md` | 缝合、依赖和编辑设计 | |
-| `downloads/preset-workbench-termux-menu.zip` | 手机上可直接解压安装的扩展包 | 发布更新时与运行文件一起更新 |
+| `downloads/preset-workbench-termux-menu.zip` | 历史安装包，仅对应旧版 | 新版本通过仓库链接安装或更新 |
 
 ## 按需检出
 
-有私有仓库权限的 Git 环境可以先只取目录表，再按任务添加指定文件。以下以修改酒馆菜单为例。
+可以先只取目录表，再按任务添加指定文件。以下以修改酒馆菜单为例。
 
 ```bash
 git clone --filter=blob:none --no-checkout https://github.com/cchh3297433176-hub/st-preset-workbench.git
