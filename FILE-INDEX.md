@@ -13,7 +13,7 @@
 | `dist/compatibility-ui.js` | 预设与参考文件导入导出、柏宝箱分组、酒馆助手脚本 | `dist/preset-document.js` |
 | `dist/preset-document.js` | 预设、世界书和脚本的格式转换与字段保留 | `tests/preset-document.test.cjs` |
 | `dist/draft-insert.js` | 缝合与世界书转预设的预览和批量插入 | `dist/editor-v2.js`、`dist/preset-document.js` |
-| `dist/tavern-world-source.js` | 通过酒馆助手读取世界书并送入转换页面 | `dist/draft-insert.js`、`dist/preset-document.js` |
+| `dist/tavern-world-source.js` | 列出酒馆聊天补全预设并载入草稿，通过酒馆助手读取世界书 | `dist/draft-insert.js`、`dist/preset-document.js` |
 | `dist/sortable.min.js` | SortableJS 第三方构建文件 | `dist/sortable-LICENSE.txt` |
 | `dist/sortable-LICENSE.txt` | SortableJS 的 MIT 许可证 | |
 | `tests/preset-document.test.cjs` | 预设往返、分组、顺序和脚本保存测试 | `dist/preset-document.js` |
