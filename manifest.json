@@ -4,7 +4,8 @@
   "requires": [],
   "optional": [],
   "js": "index.js",
+  "css": "entry-snapshots.css",
   "author": "预设工作台",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "auto_update": false
 }

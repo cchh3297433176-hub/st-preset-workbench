@@ -1,0 +1,161 @@
+import { promptManager } from '/scripts/openai.js';
+
+const storageKey = 'presetWorkbenchEntrySnapshots';
+
+function activePreset() {
+    const context = window.SillyTavern?.getContext?.();
+    if (context?.mainApi !== 'openai' || !promptManager?.activeCharacter) {
+        throw new Error('请先在酒馆中选用聊天补全预设');
+    }
+    const manager = context.getPresetManager('openai');
+    const name = manager.getSelectedPresetName();
+    if (!name) throw new Error('请先选中要保存开关的预设');
+    const order = promptManager.getPromptOrderForCharacter(promptManager.activeCharacter);
+    const entries = order.filter(({ identifier }) => {
+        const prompt = promptManager.getPromptById(identifier);
+        return prompt && promptManager.isPromptToggleAllowed(prompt);
+    });
+    return { context, name, entries };
+}
+
+function savedSnapshots(context) {
+    const records = context.extensionSettings[storageKey];
+    return Array.isArray(records) ? records : [];
+}
+
+function storeSnapshots(context, records) {
+    context.extensionSettings[storageKey] = records;
+    context.saveSettingsDebounced();
+}
+
+function makeButton(label, click) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'menu_button';
+    button.textContent = label;
+    button.addEventListener('click', click);
+    return button;
+}
+
+export function openEntrySnapshots() {
+    if (document.getElementById('preset-workbench-snapshots-dialog')) return;
+
+    const panel = document.createElement('dialog');
+    panel.id = 'preset-workbench-snapshots-dialog';
+    panel.setAttribute('aria-labelledby', 'preset-workbench-snapshots-title');
+    panel.innerHTML = `
+        <header>
+            <h3 id="preset-workbench-snapshots-title">条目快照</h3>
+        </header>
+        <p class="snapshot-preset"></p>
+        <form class="snapshot-form">
+            <input type="text" class="text_pole" aria-label="快照名称" placeholder="例如：角色甲" maxlength="60" required>
+            <button class="menu_button" type="submit">保存当前开关</button>
+        </form>
+        <p class="snapshot-feedback" role="status"></p>
+        <div class="snapshot-list"></div>
+    `;
+    const header = panel.querySelector('header');
+    const summary = panel.querySelector('.snapshot-preset');
+    const form = panel.querySelector('.snapshot-form');
+    const input = form.querySelector('input');
+    const feedback = panel.querySelector('.snapshot-feedback');
+    const list = panel.querySelector('.snapshot-list');
+    header.append(makeButton('关闭', () => panel.close()));
+    const closeOptions = document.getElementById('options');
+    if (closeOptions) closeOptions.style.display = 'none';
+    document.body.append(panel);
+    panel.addEventListener('close', () => panel.remove(), { once: true });
+
+    let openedPreset;
+    function current() {
+        const live = activePreset();
+        if (openedPreset && live.name !== openedPreset) {
+            throw new Error('酒馆已切换预设，请重新打开条目快照');
+        }
+        return live;
+    }
+    function reportError(error) {
+        feedback.textContent = error.message;
+    }
+    function draw() {
+        const { context, name, entries } = current();
+        openedPreset = name;
+        summary.textContent = name + ' · 当前开启 ' + entries.filter(entry => entry.enabled).length + ' 项';
+        list.replaceChildren();
+        const records = savedSnapshots(context).filter(record => record?.preset === name);
+        if (!records.length) list.textContent = '该预设还没有条目快照。';
+        for (const record of records) {
+            const saved = new Map(record.states);
+            const matches = entries.filter(entry => saved.has(entry.identifier));
+            const active = matches.length > 0 && matches.every(entry => Boolean(entry.enabled) === saved.get(entry.identifier));
+            const row = document.createElement('div');
+            row.className = 'snapshot-row';
+            const description = document.createElement('span');
+            description.textContent = record.name + (active ? ' · 当前' : '');
+            const apply = makeButton('应用', () => {
+                try {
+                    const { context, entries } = current();
+                    const matches = entries.filter(entry => saved.has(entry.identifier));
+                    if (!matches.length) throw new Error('当前预设里已找不到这个快照的条目');
+                    const counts = promptManager.tokenHandler.getCounts();
+                    for (const entry of matches) {
+                        const enabled = saved.get(entry.identifier);
+                        if (Boolean(entry.enabled) === enabled) continue;
+                        entry.enabled = enabled;
+                        counts[entry.identifier] = null;
+                    }
+                    context.saveSettingsDebounced();
+                    promptManager.render();
+                    panel.close();
+                    window.toastr?.success('已应用条目快照：' + record.name);
+                } catch (error) {
+                    reportError(error);
+                }
+            });
+            apply.setAttribute('aria-label', '应用 ' + record.name);
+            const remove = makeButton('删除', () => {
+                if (!window.confirm('删除快照「' + record.name + '」？')) return;
+                try {
+                    const { context, name } = current();
+                    storeSnapshots(context, savedSnapshots(context).filter(item => item?.preset !== name || item.name !== record.name));
+                    draw();
+                    feedback.textContent = '已删除快照。';
+                } catch (error) {
+                    reportError(error);
+                }
+            });
+            remove.setAttribute('aria-label', '删除 ' + record.name);
+            row.append(description, apply, remove);
+            list.append(row);
+        }
+    }
+
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        try {
+            const { context, name, entries } = current();
+            const snapshotName = input.value.trim();
+            if (!snapshotName) throw new Error('请输入快照名称');
+            if (!entries.length) throw new Error('该预设没有可切换的条目');
+            const records = savedSnapshots(context);
+            if (records.some(record => record?.preset === name && record.name === snapshotName)) {
+                throw new Error('这个名字已经存在，请换一个快照名称');
+            }
+            const record = { preset: name, name: snapshotName, states: entries.map(entry => [entry.identifier, Boolean(entry.enabled)]) };
+            storeSnapshots(context, [...records, record]);
+            input.value = '';
+            draw();
+            feedback.textContent = '已保存「' + snapshotName + '」。';
+        } catch (error) {
+            reportError(error);
+        }
+    });
+    try {
+        draw();
+    } catch (error) {
+        form.hidden = true;
+        reportError(error);
+    }
+    panel.showModal();
+}

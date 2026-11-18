@@ -23,7 +23,22 @@ function selectedTavernPreset(){
  const manager=tavernPresetManager(),name=manager?.getSelectedPresetName?.();
  if(!name)return null;
  const raw=manager.getCompletionPresetByName(name);
- return raw?{name,raw}:null;
+ if(!raw)return null;
+ for(const host of sameOriginTavernHosts()){
+  const live=host.SillyTavern?.getContext?.()?.chatCompletionSettings;
+  if(live?.preset_settings_openai!==name)continue;
+  const liveOrder=live.prompt_order?.find(group=>String(group.character_id)==='100001')?.order;
+  if(!Array.isArray(liveOrder))break;
+  const enabledById=new Map(liveOrder.map(entry=>[entry.identifier,Boolean(entry.enabled)]));
+  const copy=clone(raw);
+  const savedOrder=copy.prompt_order?.find(group=>String(group.character_id)==='100001')?.order;
+  if(!Array.isArray(savedOrder))break;
+  for(const entry of savedOrder){
+   if(enabledById.has(entry.identifier))entry.enabled=enabledById.get(entry.identifier);
+  }
+  return {name,raw:copy};
+ }
+ return {name,raw};
 }
 function hasDraftToKeep(){
  if(dirty()||state.plans.length||state.messages.length||state.tavernDraftTouched)return true;

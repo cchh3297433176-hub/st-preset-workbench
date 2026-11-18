@@ -1,0 +1,28 @@
+#preset-workbench-snapshots-dialog {
+    width: min(480px, calc(100% - 24px));
+    max-height: 80dvh;
+    margin: auto;
+    padding: 16px;
+    border: 1px solid #84978d;
+    border-radius: 12px;
+    background: var(--SmartThemeBlurTintColor, #233029);
+    color: var(--SmartThemeBodyColor, #fff);
+    backdrop-filter: blur(16px);
+}
+#preset-workbench-snapshots-dialog::backdrop { background: #0009; }
+#preset-workbench-snapshots-dialog header,
+#preset-workbench-snapshots-dialog .snapshot-form,
+#preset-workbench-snapshots-dialog .snapshot-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#preset-workbench-snapshots-dialog .snapshot-form[hidden] { display: none; }
+#preset-workbench-snapshots-dialog h3,
+#preset-workbench-snapshots-dialog .snapshot-row span,
+#preset-workbench-snapshots-dialog .snapshot-form input { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#preset-workbench-snapshots-dialog .snapshot-preset { margin: 8px 0 14px; overflow-wrap: anywhere; }
+#preset-workbench-snapshots-dialog .snapshot-feedback:empty { display: none; }
+#preset-workbench-snapshots-dialog .snapshot-list { margin-top: 12px; }
+#preset-workbench-snapshots-dialog .snapshot-row + .snapshot-row { margin-top: 8px; }
+#preset-workbench-snapshots-dialog .menu_button { min-height: 40px; white-space: nowrap; }
