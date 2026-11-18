@@ -6,6 +6,6 @@
   "js": "index.js",
   "css": "entry-snapshots.css",
   "author": "预设工作台",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "auto_update": false
 }

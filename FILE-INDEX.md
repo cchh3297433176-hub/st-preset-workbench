@@ -8,6 +8,7 @@
 | `manifest.json` | SillyTavern 扩展名称、版本、加载入口 | `index.js` |
 | `index.js` | 挂载酒馆左下角菜单，打开工作台，并挂载预设快照折叠栏 | `manifest.json`、`dist/index.html` |
 | `entry-snapshots.js`、`entry-snapshots.css` | 保存和应用酒馆当前预设的条目开关组合 | `index.js`、`manifest.json` |
+| `worldbook-snapshots.js` | 读取与恢复全局世界书及条目开关，生成应用预览 | `entry-snapshots.js` |
 | `dist/index.html` | 工作台页面、基础样式与脚本加载顺序 | `dist/workbench-core.js`、`dist/editor-v2.css` |
 | `dist/workbench-core.js` | 基础页面、事件、草稿状态、本地保存 | `dist/index.html`、`dist/editor-v2.js` |
 | `dist/editor-v2.js` | 条目编辑、参考选择、数字定位和移动 | `dist/editor-v2.css`、`dist/draft-insert.js` |

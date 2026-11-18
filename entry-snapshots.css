@@ -27,3 +27,12 @@
 #preset-workbench-snapshots .snapshot-list { margin-top: 8px; }
 #preset-workbench-snapshots .snapshot-row + .snapshot-row { margin-top: 4px; }
 #preset-workbench-snapshots .menu_button { min-height: 40px; }
+
+.workbench-change-list {
+    max-height: 40vh;
+    overflow: auto;
+    text-align: start;
+    overflow-wrap: anywhere;
+    padding-inline-start: 1.5em;
+}
+.workbench-change-list li + li { margin-top: 6px; }
