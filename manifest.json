@@ -1,0 +1,10 @@
+{
+  "display_name": "酒馆预设工作台",
+  "loading_order": 100,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "author": "预设工作台",
+  "version": "0.1.1",
+  "auto_update": false
+}
