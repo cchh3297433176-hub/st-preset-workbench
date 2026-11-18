@@ -4,6 +4,7 @@
 | --- | --- | --- |
 | `README.md` | GitHub 下载、Termux 安装、酒馆入口和使用说明 | `manifest.json` |
 | `FILE-INDEX.md` | 文件用途和按需检出方法 | |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | 下载、覆盖安装、真实数据读取与换窗口交接的踩坑记录 | `README.md`、`manifest.json` |
 | `manifest.json` | SillyTavern 扩展名称、版本、加载入口 | `index.js` |
 | `index.js` | 挂载酒馆左下角菜单，打开同源工作台 | `manifest.json`、`dist/index.html` |
 | `dist/index.html` | 工作台页面、基础样式与脚本加载顺序 | `dist/workbench-core.js`、`dist/editor-v2.css` |
